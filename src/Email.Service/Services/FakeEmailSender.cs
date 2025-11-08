@@ -1,4 +1,4 @@
-﻿using Email.Service.Configuration;
+﻿using Email.Service.Settings;
 using Microsoft.Extensions.Options;
 
 namespace Email.Service.Services;

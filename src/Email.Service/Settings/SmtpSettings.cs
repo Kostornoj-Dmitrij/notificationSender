@@ -1,4 +1,4 @@
-﻿namespace Email.Service.Configuration;
+﻿namespace Email.Service.Settings;
 
 public class SmtpSettings
 {
@@ -10,5 +10,4 @@ public class SmtpSettings
     public string SenderName { get; set; } = "Notification Service";
     public bool UseSsl { get; set; } = true;
     public bool TestMode { get; set; } = true;
-    public int TimeoutSeconds { get; set; } = 30;
 }

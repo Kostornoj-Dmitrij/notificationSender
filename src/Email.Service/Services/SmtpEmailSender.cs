@@ -1,4 +1,4 @@
-﻿using Email.Service.Configuration;
+﻿using Email.Service.Settings;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Microsoft.Extensions.Options;
