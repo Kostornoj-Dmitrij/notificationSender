@@ -145,14 +145,17 @@ services:
       context: .
       dockerfile: src/Push.Service/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=notification_db;Username=admin;Password=password
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Username=guest
       - RabbitMQ__Password=guest
       - RabbitMQ__Port=5672
     depends_on:
-      - rabbitmq
-      - router.service
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - notification-network
 
