@@ -34,7 +34,7 @@ public class PushWorker : BackgroundService
 
             _logger.LogInformation("Push Service started and listening for messages...");
 
-            _rabbitMQService.StartConsuming<Common.DTO.NotificationRequest>("push_queue", async void (notification) =>
+            _rabbitMQService.StartConsuming<Common.DTO.NotificationRequest>("push_queue", async (notification) =>
             {
                 await ProcessNotificationAsync(notification);
             });
