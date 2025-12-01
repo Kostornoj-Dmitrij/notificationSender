@@ -133,6 +133,8 @@ services:
     build:
       context: .
       dockerfile: src/Sms.Service/Dockerfile
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=notification_db;Username=admin;Password=password

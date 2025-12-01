@@ -14,21 +14,29 @@ public class FakeSmsSender : ISmsSender
         _logger = logger;
     }
 
-    public Task<bool> SendSmsAsync(string phoneNumber, string message, CancellationToken cancellationToken = default)
+    public Task<SmsSendResult> SendSmsAsync(string phoneNumber, string message, CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("FAKE SMS SENDER: Would send SMS to {PhoneNumber}", phoneNumber);
             _logger.LogInformation("FAKE SMS SENDER: Message: {Message}", message);
-            
+
             Thread.Sleep(500);
-            
-            return Task.FromResult(true);
+
+            return Task.FromResult(new SmsSendResult
+            {
+                Success = true,
+                ExternalId = Guid.NewGuid()
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "FAKE SMS SENDER: Error in fake SMS sending");
-            return Task.FromResult(false);
+            return Task.FromResult(new SmsSendResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            });
         }
     }
 }
