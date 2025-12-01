@@ -38,6 +38,10 @@ ScaffoldingReadMe.txt
 *.snupkg
 .nuget/
 
+.env
+.env.*
+!*.env.example
+
 # Others / temp files
 ~$*
 *~

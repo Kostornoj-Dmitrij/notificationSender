@@ -82,28 +82,33 @@ public class SmsProcessingService
     }
 
     private async Task<bool> SendWithRetryAsync(
-        NotificationRequest notification,
-        SmsNotification smsNotification,
-        SmsDbContext dbContext)
+    NotificationRequest notification,
+    SmsNotification smsNotification,
+    SmsDbContext dbContext)
     {
         for (int attempt = 0; attempt < _retrySettings.MaxRetries; attempt++)
         {
             try
             {
-                var success = await _smsSender.SendSmsAsync(
+                var result = await _smsSender.SendSmsAsync(
                     notification.Recipient,
                     notification.Message);
 
-                if (success)
+                if (result.Success)
                 {
+                    smsNotification.ExternalId = result.ExternalId;
+                    smsNotification.Status = "sent";
+                    await dbContext.SaveChangesAsync();
                     return true;
                 }
 
-                _logger.LogWarning("SMS sending failed for {PhoneNumber} (attempt {Attempt})",
-                    notification.Recipient, attempt + 1);
+                smsNotification.ErrorMessage = result.ErrorMessage;
+                _logger.LogWarning("SMS sending failed for {PhoneNumber} (attempt {Attempt}): {Error}",
+                    notification.Recipient, attempt + 1, result.ErrorMessage);
             }
             catch (Exception ex)
             {
+                smsNotification.ErrorMessage = ex.Message;
                 _logger.LogWarning(ex, "SMS sending error for {PhoneNumber} (attempt {Attempt})",
                     notification.Recipient, attempt + 1);
             }

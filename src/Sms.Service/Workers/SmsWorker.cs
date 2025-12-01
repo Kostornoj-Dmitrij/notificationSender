@@ -104,9 +104,9 @@ public class SmsWorker : BackgroundService
         }
     }
 
-    public override void Dispose()
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        _rabbitMQService.Dispose();
-        base.Dispose();
+        _logger.LogInformation("SMS Service is stopping...");
+        await base.StopAsync(cancellationToken);
     }
 }
