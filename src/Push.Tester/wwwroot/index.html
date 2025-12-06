@@ -1,0 +1,234 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Push Notification Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .notification { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .connected { background: #e8f5e8; border-left: 4px solid #4caf50; }
+        button { padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #1976d2; }
+        .info { background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px; margin: 10px 0; }
+        .debug { background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+<h1>Push Notification Tester (HTTP Polling)</h1>
+
+<div class="info">
+    <strong>Как это работает:</strong><br>
+    1. Нажмите "Start Polling" для начала получения уведомлений<br>
+    2. Отправьте push-уведомление через Gateway API<br>
+    3. Уведомление появится на странице через 2 секунды
+</div>
+
+<div>
+    <button id="startBtn" onclick="startPolling()">Start Polling</button>
+    <button id="stopBtn" onclick="stopPolling()" disabled>Stop Polling</button>
+    <button id="clearBtn" onclick="clearNotifications()">Clear Notifications</button>
+    <span id="pollingStatus" style="margin-left: 10px;">🔴 Stopped</span>
+</div>
+
+<div id="status" class="status">
+    Status: Ready
+</div>
+
+<div class="debug">
+    <strong>Debug Info:</strong><br>
+    Polling: <span id="debugPolling">stopped</span> |
+    Notifications: <span id="debugCount">0</span> |
+    Last check: <span id="debugLastCheck">-</span>
+</div>
+
+<div>
+    <h3>Test Push Notification:</h3>
+    <button onclick="sendTestNotification()">Send Test Push via API</button>
+</div>
+
+<div id="notifications">
+    <h3>Received Notifications: <span id="notificationCount">0</span></h3>
+</div>
+
+<script>
+    let pollingInterval = null;
+    let notificationCount = 0;
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const statusDiv = document.getElementById('status');
+    const pollingStatus = document.getElementById('pollingStatus');
+    const debugPolling = document.getElementById('debugPolling');
+    const debugCount = document.getElementById('debugCount');
+    const debugLastCheck = document.getElementById('debugLastCheck');
+    const notificationCountSpan = document.getElementById('notificationCount');
+
+    function updateStatus(message) {
+        statusDiv.textContent = `Status: ${message}`;
+        console.log('Status:', message);
+    }
+
+    function updateDebugInfo() {
+        debugPolling.textContent = pollingInterval ? 'running' : 'stopped';
+        debugCount.textContent = notificationCount;
+        debugLastCheck.textContent = new Date().toLocaleTimeString();
+    }
+
+    function startPolling() {
+        if (pollingInterval) return;
+
+        updateStatus('Polling started...');
+        pollingStatus.textContent = '🟢 Polling';
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        debugPolling.textContent = 'running';
+
+        checkForNotifications();
+
+        pollingInterval = setInterval(checkForNotifications, 2000);
+
+        console.log('✅ Polling started');
+    }
+
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+
+        updateStatus('Polling stopped');
+        pollingStatus.textContent = '🔴 Stopped';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        debugPolling.textContent = 'stopped';
+
+        console.log('❌ Polling stopped');
+    }
+
+    function checkForNotifications() {
+        fetch('/api/notifications')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    displayNotifications(data.notifications);
+                }
+                updateDebugInfo();
+            })
+            .catch(error => {
+                console.error('Polling error:', error);
+                updateStatus('Polling error: ' + error.message);
+                updateDebugInfo();
+            });
+    }
+
+    function displayNotifications(notifications) {
+        const notificationsDiv = document.getElementById('notifications');
+
+        if (notificationCount === 0) {
+            const oldNotifications = notificationsDiv.querySelectorAll('.notification');
+            oldNotifications.forEach(n => n.remove());
+        }
+
+        notifications.forEach(notification => {
+            const existingNotification = document.querySelector(`[data-notification-id="${notification.id}"]`);
+            if (!existingNotification) {
+                addNotification(notification.title, notification.message, notification.timestamp, notification.id);
+                notificationCount++;
+            }
+        });
+
+        notificationCountSpan.textContent = notificationCount;
+        updateDebugInfo();
+    }
+
+    function addNotification(title, message, timestamp, id) {
+        const notificationsDiv = document.getElementById('notifications');
+        const time = new Date(timestamp).toLocaleTimeString();
+
+        const notificationDiv = document.createElement('div');
+        notificationDiv.className = 'notification';
+        notificationDiv.setAttribute('data-notification-id', id);
+        notificationDiv.innerHTML = `
+                <strong>${title}</strong>
+                <br>${message}
+                <br><small>${time}</small>
+            `;
+
+        const firstChild = notificationsDiv.querySelector('.notification');
+        if (firstChild) {
+            notificationsDiv.insertBefore(notificationDiv, firstChild);
+        } else {
+            notificationsDiv.appendChild(notificationDiv);
+        }
+
+        if (Notification.permission === 'granted' && title !== 'System') {
+            new Notification(title, { body: message });
+        }
+    }
+
+    function clearNotifications() {
+        fetch('/api/notifications', { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                const notificationsDiv = document.getElementById('notifications');
+                const oldNotifications = notificationsDiv.querySelectorAll('.notification');
+                oldNotifications.forEach(n => n.remove());
+
+                notificationCount = 0;
+                notificationCountSpan.textContent = '0';
+
+                addNotification('System', data.message);
+                updateDebugInfo();
+            })
+            .catch(error => {
+                console.error('Clear error:', error);
+            });
+    }
+
+    function sendTestNotification() {
+        fetch('http://localhost:8080/api/notifications', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'push',
+                recipient: 'test-device-' + Date.now(),
+                subject: 'Test Push Notification',
+                message: 'This is a test push notification via HTTP polling! ' + new Date().toLocaleTimeString(),
+                metadata: {
+                    platform: 'web'
+                }
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                addNotification('Test', 'Test notification sent to queue: ' + data.notificationId, new Date().toISOString(), 'test-' + Date.now());
+            })
+            .catch(error => {
+                addNotification('Error', 'Failed to send test notification: ' + error.message, new Date().toISOString(), 'error-' + Date.now());
+                console.error('Fetch error:', error);
+            });
+    }
+
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            console.log('Notification permission:', permission);
+        });
+    }
+
+    window.onload = startPolling;
+
+    setInterval(updateDebugInfo, 1000);
+</script>
+</body>
+</html>

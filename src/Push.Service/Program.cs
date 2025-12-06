@@ -30,6 +30,11 @@ try
     });
 
     builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
+    
+    builder.Services.AddHttpClient<WebSocketPushSender>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
 
     var pushSettings = builder.Configuration.GetSection("PushSettings").Get<PushSettings>();
     if (pushSettings?.TestMode == true)
@@ -39,12 +44,11 @@ try
     }
     else
     {
-        builder.Services.AddScoped<IPushSender, FirebasePushSender>();
-        Console.WriteLine("Using REAL Firebase push sender");
+        builder.Services.AddScoped<IPushSender, WebSocketPushSender>();
+        Console.WriteLine("Using REAL WebSocket push sender");
     }
 
     builder.Services.AddScoped<PushProcessingService>();
-
     builder.Services.AddHostedService<PushWorker>();
 
     var host = builder.Build();
