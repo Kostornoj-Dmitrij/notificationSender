@@ -35,12 +35,12 @@ try
     if (smtpSettings?.TestMode == true)
     {
         builder.Services.AddScoped<IEmailSender, FakeEmailSender>();
-        Console.WriteLine("Using FAKE email sender for testing");
+        Log.Information("Using FAKE email sender for testing");
     }
     else
     {
         builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
-        Console.WriteLine("Using REAL SMTP email sender");
+        Log.Information("Using REAL SMTP email sender");
     }
 
     builder.Services.AddScoped<EmailProcessingService>();

@@ -7,31 +7,20 @@ using Microsoft.Extensions.Options;
 
 namespace Email.Service.Services;
 
-public class EmailProcessingService
+public class EmailProcessingService(
+    ILogger<EmailProcessingService> logger,
+    IEmailSender emailSender,
+    IServiceProvider serviceProvider,
+    IOptions<RetrySettings> retrySettings)
 {
-    private readonly ILogger<EmailProcessingService> _logger;
-    private readonly IEmailSender _emailSender;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly RetrySettings _retrySettings;
-
-    public EmailProcessingService(
-        ILogger<EmailProcessingService> logger,
-        IEmailSender emailSender,
-        IServiceProvider serviceProvider,
-        IOptions<RetrySettings> retrySettings)
-    {
-        _logger = logger;
-        _emailSender = emailSender;
-        _serviceProvider = serviceProvider;
-        _retrySettings = retrySettings.Value;
-    }
+    private readonly RetrySettings _retrySettings = retrySettings.Value;
 
     public async Task ProcessNotificationAsync(NotificationRequest notification)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<EmailDbContext>();
 
-        _logger.LogInformation("Processing email notification: {NotificationId}", notification.Id);
+        logger.LogInformation("Processing email notification: {NotificationId}", notification.Id);
 
         try
         {
@@ -40,7 +29,7 @@ public class EmailProcessingService
 
             if (existingNotification != null)
             {
-                _logger.LogWarning("Notification {NotificationId} already processed", notification.Id);
+                logger.LogWarning("Notification {NotificationId} already processed", notification.Id);
                 return;
             }
 
@@ -66,18 +55,18 @@ public class EmailProcessingService
 
             if (success)
             {
-                _logger.LogInformation("Email sent successfully to {Recipient} for notification {NotificationId}",
+                logger.LogInformation("Email sent successfully to {Recipient} for notification {NotificationId}",
                     notification.Recipient, notification.Id);
             }
             else
             {
-                _logger.LogError("Failed to send email to {Recipient} for notification {NotificationId} after retries",
+                logger.LogError("Failed to send email to {Recipient} for notification {NotificationId} after retries",
                     notification.Recipient, notification.Id);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing email notification {NotificationId}", notification.Id);
+            logger.LogError(ex, "Error processing email notification {NotificationId}", notification.Id);
             throw;
         }
     }
@@ -91,7 +80,7 @@ public class EmailProcessingService
         {
             try
             {
-                var success = await _emailSender.SendEmailAsync(
+                var success = await emailSender.SendEmailAsync(
                     notification.Recipient,
                     notification.Subject,
                     notification.Message);
@@ -101,12 +90,12 @@ public class EmailProcessingService
                     return true;
                 }
 
-                _logger.LogWarning("Email sending failed for {Recipient} (attempt {Attempt})",
+                logger.LogWarning("Email sending failed for {Recipient} (attempt {Attempt})",
                     notification.Recipient, attempt + 1);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Email sending error for {Recipient} (attempt {Attempt})",
+                logger.LogWarning(ex, "Email sending error for {Recipient} (attempt {Attempt})",
                     notification.Recipient, attempt + 1);
             }
 

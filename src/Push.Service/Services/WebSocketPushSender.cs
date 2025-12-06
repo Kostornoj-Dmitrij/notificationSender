@@ -1,26 +1,17 @@
 ﻿using Microsoft.Extensions.Options;
 using Push.Service.Settings;
-using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 
 namespace Push.Service.Services;
 
-public class WebSocketPushSender : IPushSender
+public class WebSocketPushSender(
+    IOptions<PushSettings> pushSettings,
+    ILogger<WebSocketPushSender> logger,
+    HttpClient httpClient)
+    : IPushSender
 {
-    private readonly PushSettings _pushSettings;
-    private readonly ILogger<WebSocketPushSender> _logger;
-    private readonly HttpClient _httpClient;
-
-    public WebSocketPushSender(
-        IOptions<PushSettings> pushSettings, 
-        ILogger<WebSocketPushSender> logger,
-        HttpClient httpClient)
-    {
-        _pushSettings = pushSettings.Value;
-        _logger = logger;
-        _httpClient = httpClient;
-    }
+    private readonly PushSettings _pushSettings = pushSettings.Value;
 
     public async Task<bool> SendPushAsync(string deviceToken, string title, string message, string? platform = null, CancellationToken cancellationToken = default)
     {
@@ -28,7 +19,7 @@ public class WebSocketPushSender : IPushSender
         {
             if (_pushSettings.TestMode)
             {
-                _logger.LogInformation("TEST MODE: Push would be sent: {Title} - {Message}", title, message);
+                logger.LogInformation("TEST MODE: Push would be sent: {Title} - {Message}", title, message);
                 return true;
             }
 
@@ -47,28 +38,28 @@ public class WebSocketPushSender : IPushSender
 
             try
             {
-                var response = await _httpClient.PostAsync("http://push.tester:8080/api/push", content, cancellationToken);
+                var response = await httpClient.PostAsync("http://push.tester:8080/api/push", content, cancellationToken);
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("Push notification sent to Push.Tester: {Title}", title);
+                    logger.LogInformation("Push notification sent to Push.Tester: {Title}", title);
                     return true;
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to send push to Push.Tester. Status: {StatusCode}", response.StatusCode);
+                    logger.LogWarning("Failed to send push to Push.Tester. Status: {StatusCode}", response.StatusCode);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to connect to Push.Tester");
+                logger.LogError(ex, "Failed to connect to Push.Tester");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send push notification");
+            logger.LogError(ex, "Failed to send push notification");
             return false;
         }
     }

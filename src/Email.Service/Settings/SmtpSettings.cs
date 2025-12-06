@@ -2,12 +2,12 @@
 
 public class SmtpSettings
 {
-    public string Server { get; set; } = "localhost";
-    public int Port { get; set; } = 587;
-    public string Username { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string SenderEmail { get; set; } = string.Empty;
-    public string SenderName { get; set; } = "Notification Service";
-    public bool UseSsl { get; set; } = true;
-    public bool TestMode { get; set; } = true;
+    public string Server { get; init; } = "localhost";
+    public int Port { get; init; } = 587;
+    public string Username { get; init; } = string.Empty;
+    public string Password { get; init; } = string.Empty;
+    public string SenderEmail { get; init; } = string.Empty;
+    public string SenderName { get; init; } = "Notification Service";
+    public bool UseSsl { get; init; } = true;
+    public bool TestMode { get; init; } = true;
 }

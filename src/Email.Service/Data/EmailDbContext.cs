@@ -3,12 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Email.Service.Data;
 
-public class EmailDbContext : DbContext
+public class EmailDbContext(DbContextOptions<EmailDbContext> options) : DbContext(options)
 {
-    public EmailDbContext(DbContextOptions<EmailDbContext> options) : base(options)
-    {
-    }
-
     public DbSet<EmailNotification> EmailNotifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

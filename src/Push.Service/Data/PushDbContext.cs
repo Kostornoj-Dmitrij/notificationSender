@@ -3,12 +3,8 @@ using Push.Service.Models;
 
 namespace Push.Service.Data;
 
-public class PushDbContext : DbContext
+public class PushDbContext(DbContextOptions<PushDbContext> options) : DbContext(options)
 {
-    public PushDbContext(DbContextOptions<PushDbContext> options) : base(options)
-    {
-    }
-
     public DbSet<PushNotification> PushNotifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

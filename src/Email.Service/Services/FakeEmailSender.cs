@@ -3,24 +3,18 @@ using Microsoft.Extensions.Options;
 
 namespace Email.Service.Services;
 
-public class FakeEmailSender : IEmailSender
+public class FakeEmailSender(IOptions<SmtpSettings> smtpSettings, ILogger<FakeEmailSender> logger)
+    : IEmailSender
 {
-    private readonly ILogger<FakeEmailSender> _logger;
-    private readonly SmtpSettings _smtpSettings;
-
-    public FakeEmailSender(IOptions<SmtpSettings> smtpSettings, ILogger<FakeEmailSender> logger)
-    {
-        _smtpSettings = smtpSettings.Value;
-        _logger = logger;
-    }
+    private readonly SmtpSettings _smtpSettings = smtpSettings.Value;
 
     public Task<bool> SendEmailAsync(string recipient, string subject, string message, CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogInformation("FAKE EMAIL SENDER: Would send email to {Recipient}", recipient);
-            _logger.LogInformation("FAKE EMAIL SENDER: Subject: {Subject}", subject);
-            _logger.LogInformation("FAKE EMAIL SENDER: Message: {Message}", message);
+            logger.LogInformation("FAKE EMAIL SENDER: Would send email to {Recipient}", recipient);
+            logger.LogInformation("FAKE EMAIL SENDER: Subject: {Subject}", subject);
+            logger.LogInformation("FAKE EMAIL SENDER: Message: {Message}", message);
             
             Thread.Sleep(500);
             
@@ -28,7 +22,7 @@ public class FakeEmailSender : IEmailSender
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "FAKE EMAIL SENDER: Error in fake email sending");
+            logger.LogError(ex, "FAKE EMAIL SENDER: Error in fake email sending");
             return Task.FromResult(false);
         }
     }

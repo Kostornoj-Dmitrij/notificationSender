@@ -40,12 +40,12 @@ try
     if (pushSettings?.TestMode == true)
     {
         builder.Services.AddScoped<IPushSender, FakePushSender>();
-        Console.WriteLine("Using FAKE push sender for testing");
+        Log.Information("Using FAKE push sender for testing");
     }
     else
     {
         builder.Services.AddScoped<IPushSender, WebSocketPushSender>();
-        Console.WriteLine("Using REAL WebSocket push sender");
+        Log.Information("Using REAL WebSocket push sender");
     }
 
     builder.Services.AddScoped<PushProcessingService>();

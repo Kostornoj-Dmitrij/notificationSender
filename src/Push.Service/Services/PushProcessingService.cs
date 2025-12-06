@@ -7,31 +7,20 @@ using Microsoft.Extensions.Options;
 
 namespace Push.Service.Services;
 
-public class PushProcessingService
+public class PushProcessingService(
+    ILogger<PushProcessingService> logger,
+    IPushSender pushSender,
+    IServiceProvider serviceProvider,
+    IOptions<RetrySettings> retrySettings)
 {
-    private readonly ILogger<PushProcessingService> _logger;
-    private readonly IPushSender _pushSender;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly RetrySettings _retrySettings;
-
-    public PushProcessingService(
-        ILogger<PushProcessingService> logger,
-        IPushSender pushSender,
-        IServiceProvider serviceProvider,
-        IOptions<RetrySettings> retrySettings)
-    {
-        _logger = logger;
-        _pushSender = pushSender;
-        _serviceProvider = serviceProvider;
-        _retrySettings = retrySettings.Value;
-    }
+    private readonly RetrySettings _retrySettings = retrySettings.Value;
 
     public async Task ProcessNotificationAsync(NotificationRequest notification)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PushDbContext>();
 
-        _logger.LogInformation("Processing push notification: {NotificationId}", notification.Id);
+        logger.LogInformation("Processing push notification: {NotificationId}", notification.Id);
 
         try
         {
@@ -40,7 +29,7 @@ public class PushProcessingService
 
             if (existingNotification != null)
             {
-                _logger.LogWarning("Notification {NotificationId} already processed", notification.Id);
+                logger.LogWarning("Notification {NotificationId} already processed", notification.Id);
                 return;
             }
 
@@ -69,18 +58,18 @@ public class PushProcessingService
 
             if (success)
             {
-                _logger.LogInformation("Push sent successfully to {DeviceToken} for notification {NotificationId}",
+                logger.LogInformation("Push sent successfully to {DeviceToken} for notification {NotificationId}",
                     notification.Recipient, notification.Id);
             }
             else
             {
-                _logger.LogError("Failed to send push to {DeviceToken} for notification {NotificationId} after retries",
+                logger.LogError("Failed to send push to {DeviceToken} for notification {NotificationId} after retries",
                     notification.Recipient, notification.Id);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing push notification {NotificationId}", notification.Id);
+            logger.LogError(ex, "Error processing push notification {NotificationId}", notification.Id);
             throw;
         }
     }
@@ -96,7 +85,7 @@ public class PushProcessingService
             {
                 notification.Metadata.TryGetValue("platform", out var platform);
 
-                var success = await _pushSender.SendPushAsync(
+                var success = await pushSender.SendPushAsync(
                     notification.Recipient,
                     notification.Subject,
                     notification.Message,
@@ -107,12 +96,12 @@ public class PushProcessingService
                     return true;
                 }
 
-                _logger.LogWarning("Push sending failed for {DeviceToken} (attempt {Attempt})",
+                logger.LogWarning("Push sending failed for {DeviceToken} (attempt {Attempt})",
                     notification.Recipient, attempt + 1);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Push sending error for {DeviceToken} (attempt {Attempt})",
+                logger.LogWarning(ex, "Push sending error for {DeviceToken} (attempt {Attempt})",
                     notification.Recipient, attempt + 1);
             }
 
