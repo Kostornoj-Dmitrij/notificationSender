@@ -106,6 +106,8 @@ services:
     build:
       context: .
       dockerfile: src/Email.Service/Dockerfile
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=notification_db;Username=admin;Password=password
@@ -115,9 +117,6 @@ services:
       - RabbitMQ__Port=5672
       - SmtpSettings__Server=smtp.gmail.com
       - SmtpSettings__Port=587
-      - SmtpSettings__Username=your-email@gmail.com,
-      - SmtpSettings__Password=your-app-password
-      - SmtpSettings__SenderEmail=your-email@gmail.com,
       - SmtpSettings__SenderName=Notification Service
       - SmtpSettings__UseSsl=true
       - SmtpSettings__TestMode=false
