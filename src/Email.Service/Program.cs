@@ -19,39 +19,36 @@ try
 
     builder.Services.AddSerilog();
 
-    builder.Services.AddSingleton<SmtpSettings>(sp =>
+    var configuration = builder.Configuration;
+    var username = Environment.GetEnvironmentVariable("SMTP_USERNAME");
+    var password = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+    var senderEmail = Environment.GetEnvironmentVariable("SMTP_SENDER_EMAIL");
+    
+    var finalSmtpSettings = new SmtpSettings
     {
-        var config = sp.GetRequiredService<IConfiguration>();
-        var username = Environment.GetEnvironmentVariable("SMTP_USERNAME");
-        var password = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
-        var senderEmail = Environment.GetEnvironmentVariable("SMTP_SENDER_EMAIL");
-        Console.WriteLine($"DEBUG: SMTP_USERNAME from Environment: '{username}'");
-        Console.WriteLine($"DEBUG: SMTP_PASSWORD from Environment: '{(string.IsNullOrEmpty(password) ? "EMPTY" : "PRESENT")}'");
-        Console.WriteLine($"DEBUG: SMTP_SENDER_EMAIL from Environment: '{senderEmail}'");
+        Username = username ?? string.Empty,
+        Password = password ?? string.Empty,
+        SenderEmail = senderEmail ?? string.Empty,
         
-        var settings = new SmtpSettings
-        {
-            Username = username ?? string.Empty,
-            Password = password ?? string.Empty,
-            SenderEmail = senderEmail ?? string.Empty,
-            
-            Server = config["SmtpSettings:Server"] ?? "localhost",
-            Port = int.TryParse(config["SmtpSettings:Port"], out var port) ? port : 587,
-            SenderName = config["SmtpSettings:SenderName"] ?? "Notification Service",
-            UseSsl = bool.TryParse(config["SmtpSettings:UseSsl"], out var useSsl) && useSsl,
-            TestMode = bool.TryParse(config["SmtpSettings:TestMode"], out var testMode) && testMode
-        };
-        Console.WriteLine("✅ Final SmtpSettings:");
-        Console.WriteLine($"  Server: {settings.Server}");
-        Console.WriteLine($"  Port: {settings.Port}");
-        Console.WriteLine($"  Username: {settings.Username}");
-        Console.WriteLine($"  Password: {settings.Password}");
-        Console.WriteLine($"  SenderEmail: {settings.SenderEmail}");
-        Console.WriteLine($"  SenderName: {settings.SenderName}");
-        Console.WriteLine($"  UseSsl: {settings.UseSsl}");
-        Console.WriteLine($"  TestMode: {settings.TestMode}");
-        return settings;
+        Server = configuration["SmtpSettings:Server"] ?? "localhost",
+        Port = int.TryParse(configuration["SmtpSettings:Port"], out var port) ? port : 587,
+        SenderName = configuration["SmtpSettings:SenderName"] ?? "Notification Service",
+        UseSsl = bool.TryParse(configuration["SmtpSettings:UseSsl"], out var useSsl) && useSsl,
+        TestMode = bool.TryParse(configuration["SmtpSettings:TestMode"], out var testMode) && testMode
+    };
+    
+    builder.Services.Configure<SmtpSettings>(options =>
+    {
+        options.Server = finalSmtpSettings.Server;
+        options.Port = finalSmtpSettings.Port;
+        options.Username = finalSmtpSettings.Username;
+        options.Password = finalSmtpSettings.Password;
+        options.SenderEmail = finalSmtpSettings.SenderEmail;
+        options.SenderName = finalSmtpSettings.SenderName;
+        options.UseSsl = finalSmtpSettings.UseSsl;
+        options.TestMode = finalSmtpSettings.TestMode;
     });
+    builder.Services.AddSingleton(finalSmtpSettings);
 
     builder.Services.Configure<RetrySettings>(builder.Configuration.GetSection("RetrySettings"));
     builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQ"));
