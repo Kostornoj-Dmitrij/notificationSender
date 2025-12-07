@@ -5,36 +5,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Email.Service.Workers;
 
-public class EmailWorker : BackgroundService
+public class EmailWorker(
+    ILogger<EmailWorker> logger,
+    IRabbitMQService rabbitMqService,
+    IServiceProvider serviceProvider,
+    IHostApplicationLifetime hostApplicationLifetime)
+    : BackgroundService
 {
-    private readonly ILogger<EmailWorker> _logger;
-    private readonly IRabbitMQService _rabbitMQService;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IHostApplicationLifetime _hostApplicationLifetime;
-
-    public EmailWorker(
-        ILogger<EmailWorker> logger,
-        IRabbitMQService rabbitMQService,
-        IServiceProvider serviceProvider,
-        IHostApplicationLifetime hostApplicationLifetime)
-    {
-        _logger = logger;
-        _rabbitMQService = rabbitMQService;
-        _serviceProvider = serviceProvider;
-        _hostApplicationLifetime = hostApplicationLifetime;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
         {
-            _logger.LogInformation("Email Service starting...");
+            logger.LogInformation("Email Service starting...");
 
             await InitializeDatabaseAsync(stoppingToken);
 
-            _logger.LogInformation("Email Service started and listening for messages...");
+            logger.LogInformation("Email Service started and listening for messages...");
 
-            _rabbitMQService.StartConsuming<Common.DTO.NotificationRequest>("email_queue", async void (notification) =>
+            rabbitMqService.StartConsuming<Common.DTO.NotificationRequest>("email_queue", async void (notification) =>
             {
                 await ProcessNotificationAsync(notification);
             });
@@ -43,14 +31,14 @@ public class EmailWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "Email Service failed to start");
-            _hostApplicationLifetime.StopApplication();
+            logger.LogCritical(ex, "Email Service failed to start");
+            hostApplicationLifetime.StopApplication();
         }
     }
 
     private async Task InitializeDatabaseAsync(CancellationToken stoppingToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<EmailDbContext>();
         var retrySettings = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Settings.RetrySettings>>().Value;
 
@@ -58,21 +46,21 @@ public class EmailWorker : BackgroundService
         {
             try
             {
-                _logger.LogInformation("Attempting to connect to database (attempt {Attempt}/{MaxRetries})...",
+                logger.LogInformation("Attempting to connect to database (attempt {Attempt}/{MaxRetries})...",
                     attempt, retrySettings.DatabaseMaxRetries);
 
                 await dbContext.Database.MigrateAsync(stoppingToken);
-                _logger.LogInformation("Database connection and migration successful");
+                logger.LogInformation("Database connection and migration successful");
                 return;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to connect to database (attempt {Attempt}/{MaxRetries})",
+                logger.LogWarning(ex, "Failed to connect to database (attempt {Attempt}/{MaxRetries})",
                     attempt, retrySettings.DatabaseMaxRetries);
 
                 if (attempt == retrySettings.DatabaseMaxRetries)
                 {
-                    _logger.LogError(ex, "Unable to connect to database after {MaxRetries} attempts",
+                    logger.LogError(ex, "Unable to connect to database after {MaxRetries} attempts",
                         retrySettings.DatabaseMaxRetries);
                     throw;
                 }
@@ -84,7 +72,7 @@ public class EmailWorker : BackgroundService
 
     private async Task ProcessNotificationAsync(Common.DTO.NotificationRequest notification)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var emailProcessingService = scope.ServiceProvider.GetRequiredService<EmailProcessingService>();
         
         await emailProcessingService.ProcessNotificationAsync(notification);
@@ -106,7 +94,7 @@ public class EmailWorker : BackgroundService
 
     public override void Dispose()
     {
-        _rabbitMQService.Dispose();
+        rabbitMqService.Dispose();
         base.Dispose();
     }
 }
