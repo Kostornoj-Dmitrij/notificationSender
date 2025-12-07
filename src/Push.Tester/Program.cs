@@ -62,7 +62,7 @@ app.MapPost("/api/push", async (HttpContext context) =>
     }
 });
 
-app.MapGet("/api/notifications", (HttpContext context) =>
+app.MapGet("/api/notifications", (HttpContext _) =>
 {
     lock (notificationsLock)
     {

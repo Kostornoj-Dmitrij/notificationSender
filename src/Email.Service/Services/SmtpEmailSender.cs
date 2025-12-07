@@ -5,16 +5,10 @@ using Microsoft.Extensions.Options;
 
 namespace Email.Service.Services;
 
-public class SmtpEmailSender : IEmailSender
+public class SmtpEmailSender(IOptions<SmtpSettings> smtpSettings, ILogger<SmtpEmailSender> logger)
+    : IEmailSender
 {
-    private readonly SmtpSettings _smtpSettings;
-    private readonly ILogger<SmtpEmailSender> _logger;
-
-    public SmtpEmailSender(IOptions<SmtpSettings> smtpSettings, ILogger<SmtpEmailSender> logger)
-    {
-        _smtpSettings = smtpSettings.Value;
-        _logger = logger;
-    }
+    private readonly SmtpSettings _smtpSettings = smtpSettings.Value;
 
     public async Task<bool> SendEmailAsync(string recipient, string subject, string message, CancellationToken cancellationToken = default)
     {
@@ -35,12 +29,12 @@ public class SmtpEmailSender : IEmailSender
             await client.SendAsync(emailMessage, cancellationToken);
             await client.DisconnectAsync(true, cancellationToken);
 
-            _logger.LogInformation("Email sent successfully to {Recipient}", recipient);
+            logger.LogInformation("Email sent successfully to {Recipient}", recipient);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {Recipient}", recipient);
+            logger.LogError(ex, "Failed to send email to {Recipient}", recipient);
             return false;
         }
     }
