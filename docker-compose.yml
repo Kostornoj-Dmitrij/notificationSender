@@ -161,6 +161,7 @@ services:
       - RabbitMQ__Password=guest
       - RabbitMQ__Port=5672
       - PushSettings__TestMode=false
+      - PushSettings__PushTesterUrl=http://push.tester:8080
     depends_on:
       rabbitmq:
         condition: service_healthy

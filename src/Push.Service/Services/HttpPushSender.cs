@@ -5,9 +5,9 @@ using System.Text.Json;
 
 namespace Push.Service.Services;
 
-public class WebSocketPushSender(
+public class HttpPushSender(
     IOptions<PushSettings> pushSettings,
-    ILogger<WebSocketPushSender> logger,
+    ILogger<HttpPushSender> logger,
     HttpClient httpClient)
     : IPushSender
 {
@@ -36,9 +36,11 @@ public class WebSocketPushSender(
             var jsonMessage = JsonSerializer.Serialize(pushMessage);
             var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
 
+            var url = $"{_pushSettings.PushTesterUrl}/api/push";
+
             try
             {
-                var response = await httpClient.PostAsync("http://push.tester:8080/api/push", content, cancellationToken);
+                var response = await httpClient.PostAsync(url, content, cancellationToken);
                 
                 if (response.IsSuccessStatusCode)
                 {

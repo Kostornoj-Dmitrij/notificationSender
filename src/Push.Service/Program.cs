@@ -31,7 +31,7 @@ try
 
     builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
     
-    builder.Services.AddHttpClient<WebSocketPushSender>(client =>
+    builder.Services.AddHttpClient<HttpPushSender>(client =>
     {
         client.Timeout = TimeSpan.FromSeconds(30);
     });
@@ -44,14 +44,29 @@ try
     }
     else
     {
-        builder.Services.AddScoped<IPushSender, WebSocketPushSender>();
-        Log.Information("Using REAL WebSocket push sender");
+        builder.Services.AddScoped<IPushSender, HttpPushSender>();
+        Log.Information("Using REAL HTTP push sender");
     }
 
     builder.Services.AddScoped<PushProcessingService>();
     builder.Services.AddHostedService<PushWorker>();
 
     var host = builder.Build();
+    using (var scope = host.Services.CreateScope())
+    {
+        try
+        {
+            var context = scope.ServiceProvider.GetRequiredService<PushDbContext>();
+            await context.Database.MigrateAsync();
+            Log.Information("Database migrations applied successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Failed to apply database migrations");
+            throw;
+        }
+    }
+
     await host.RunAsync();
 }
 catch (Exception ex)
