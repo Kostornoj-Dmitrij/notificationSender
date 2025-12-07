@@ -115,7 +115,7 @@ services:
       - RabbitMQ__Username=guest
       - RabbitMQ__Password=guest
       - RabbitMQ__Port=5672
-      - SmtpSettings__Server=smtp.gmail.com
+      - SmtpSettings__Server=smtp.yandex.ru
       - SmtpSettings__Port=587
       - SmtpSettings__SenderName=Notification Service
       - SmtpSettings__UseSsl=true
