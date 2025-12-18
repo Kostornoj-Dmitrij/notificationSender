@@ -1,6 +1,8 @@
 using Common.Messaging;
 using Common.Utils;
 using Serilog;
+using Prometheus;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,4 +34,6 @@ if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Docke
 app.UseRouting();
 app.MapControllers();
 
+app.UseHttpMetrics(); 
+app.MapMetrics(); 
 app.Run();
