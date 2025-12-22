@@ -155,6 +155,7 @@ POST http://localhost:8080/api/notifications
 ```
 
 Пример полученного письма:
+
 <img width="601" height="245" alt="image" src="https://github.com/user-attachments/assets/c2530511-23bc-4d19-ba8e-ad18ce3e0b78" />
 
 ### SMS уведомление:
@@ -168,6 +169,7 @@ POST http://localhost:8080/api/notifications
 ```
 
 Пример полученного сообщения:
+
 <img width="384" height="263" alt="image" src="https://github.com/user-attachments/assets/34af9959-68d6-4013-b76a-1340b15cedb3" />
 
 ### Push уведомление:
