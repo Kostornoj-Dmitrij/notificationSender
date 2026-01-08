@@ -195,12 +195,24 @@ Push-уведомления доставляются в тестовый сер�
 ### Status API
 
 Получение статуса уведомления по NotificationId
+```
+GET http://localhost:8081/api/status/{NotificationId}
+```
+
 <img width="786" height="825" alt="image" src="https://github.com/user-attachments/assets/a95796d7-53dd-4454-811c-c71dab2dd772" />
 
 Статус недавних уведомлений
+```
+GET http://localhost:8081/api/status/recent
+```
+
 <img width="823" height="820" alt="image" src="https://github.com/user-attachments/assets/55213c9a-4b58-44ed-af88-b2abfd7ff348" />
 
 Статистика 
+```
+GET http://localhost:8081/api/status/statistics
+```
+
 <img width="787" height="685" alt="image" src="https://github.com/user-attachments/assets/359062db-87a1-4e41-a3af-38a0cc5773fc" />
 
 
