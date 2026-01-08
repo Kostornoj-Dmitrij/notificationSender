@@ -191,6 +191,19 @@ Push-уведомления доставляются в тестовый сер�
 
 <img width="363" height="132" alt="image" src="https://github.com/user-attachments/assets/3ac4347e-45fd-4f41-b4c7-78573538e0dd" />
 
+
+### Status API
+
+Получение статуса уведомления по NotificationId
+<img width="786" height="825" alt="image" src="https://github.com/user-attachments/assets/a95796d7-53dd-4454-811c-c71dab2dd772" />
+
+Статус недавних уведомлений
+<img width="823" height="820" alt="image" src="https://github.com/user-attachments/assets/55213c9a-4b58-44ed-af88-b2abfd7ff348" />
+
+Статистика 
+<img width="787" height="685" alt="image" src="https://github.com/user-attachments/assets/359062db-87a1-4e41-a3af-38a0cc5773fc" />
+
+
 ## Мониторинг и логирование
 - Все сервисы отдают метрики в формате Prometheus (/metrics)
 - Prometheus собирает метрики
